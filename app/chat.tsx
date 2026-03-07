@@ -60,9 +60,9 @@ export default function Chat() {
 
       const botMsg: ChatMessage = {
         role: "bot",
-        type: data.type === "video" ? "video" : "text",
-        text: data.text,
-        url: data.url,
+        type: "text",
+        text: data.reply,
+  
       };
 
       setMessages((prev) => [...prev, botMsg]);
@@ -114,14 +114,15 @@ export default function Chat() {
       </ScrollView>
 
       <View style={styles.inputArea}>
-        <TextInput
-          style={styles.input}
-          value={message}
-          onChangeText={setMessage}
-          placeholder="Digite sua mensagem..."
-          placeholderTextColor="#777"
-        />
-
+<TextInput
+  style={styles.input}
+  value={message}
+  onChangeText={setMessage}
+  placeholder="Digite sua mensagem..."
+  placeholderTextColor="#777"
+  onSubmitEditing={sendMessage}
+  returnKeyType="send"
+/>
         <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
           <Text style={styles.sendButtonText}>Enviar</Text>
         </TouchableOpacity>

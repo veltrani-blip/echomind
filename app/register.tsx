@@ -3,40 +3,69 @@ import { useState } from "react";
 import { Alert, Button, TextInput, View } from "react-native";
 
 export default function Register() {
+
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
 
   async function handleRegister() {
-    const res = await fetch("http://192.168.1.8:3000/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name }),
-    });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      Alert.alert(data.error || "Erro");
+    if (!name || !email || !password) {
+      Alert.alert("Preencha todos os campos");
       return;
     }
 
-    Alert.alert("Usuário criado!");
-    router.push("/");
+    try {
+
+      const res = await fetch("http://192.168.1.8:3000/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          phone,
+          password
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        Alert.alert(data.error || "Erro no cadastro");
+        return;
+      }
+
+      Alert.alert("Usuário criado com sucesso");
+
+      router.push("/login");
+
+    } catch (err) {
+
+      Alert.alert("Erro ao conectar com o servidor");
+
+    }
   }
 
   return (
-    <View style={{ 
-      flex: 1,
-      justifyContent: "center",
-      padding: 20,
-     backgroundColor: "#b2b2b3"
-    }}>
+
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        padding: 20,
+        backgroundColor: "#2b2b2b"
+      }}
+    >
 
       <TextInput
         placeholder="Nome"
         placeholderTextColor="#94a3b8"
+        value={name}
         onChangeText={setName}
         style={{
           backgroundColor: "#1e293b",
@@ -50,9 +79,24 @@ export default function Register() {
       <TextInput
         placeholder="Email"
         placeholderTextColor="#94a3b8"
+        value={email}
         onChangeText={setEmail}
         style={{
-          backgroundColor: "#edeff1",
+          backgroundColor: "#1e293b",
+          color: "#fff",
+          borderRadius: 8,
+          padding: 12,
+          marginBottom: 12
+        }}
+      />
+
+      <TextInput
+        placeholder="Telefone"
+        placeholderTextColor="#94a3b8"
+        value={phone}
+        onChangeText={setPhone}
+        style={{
+          backgroundColor: "#1e293b",
           color: "#fff",
           borderRadius: 8,
           padding: 12,
@@ -64,9 +108,10 @@ export default function Register() {
         placeholder="Senha"
         placeholderTextColor="#94a3b8"
         secureTextEntry
+        value={password}
         onChangeText={setPassword}
         style={{
-          backgroundColor: "#d9dce0",
+          backgroundColor: "#1e293b",
           color: "#fff",
           borderRadius: 8,
           padding: 12,
@@ -74,7 +119,12 @@ export default function Register() {
         }}
       />
 
-      <Button title="Cadastrar" onPress={handleRegister} />
+      <Button
+        title="Criar conta"
+        onPress={handleRegister}
+      />
+
     </View>
   );
+
 }
