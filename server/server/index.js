@@ -1,26 +1,39 @@
-require("dotenv").config()
+require("dotenv").config();
 
-const express = require("express")
-const cors = require("cors")
+const express = require("express");
+const cors = require("cors");
+const db = require("./db");
 
-const app = express()
+const app = express();
+const PORT = 3000;
 
-app.use(cors())
-app.use(express.json())
+let currentSessionId = null;
 
-const PORT = 3000
+app.use(cors());
+app.use(express.json());
+
 app.get("/", (req, res) => {
-  res.send("Servidor Echomind funcionando")
-})
-/*
-Memória da conversa
-*/
-let conversationHistory = []
+  res.send("Servidor Echomind online");
+});
 
-/*
-IA FAKE PARA DESENVOLVIMENTO
-*/
 function fakeTherapyResponse(message) {
+  const text = String(message || "").toLowerCase();
+
+  if (text.includes("ansioso") || text.includes("ansiedade")) {
+    return "Entendo. Quando essa ansiedade costuma aparecer com mais força?";
+  }
+
+  if (text.includes("triste") || text.includes("tristeza")) {
+    return "Sinto muito que você esteja passando por isso. Quer me contar o que aconteceu?";
+  }
+
+  if (text.includes("cansado") || text.includes("cansada")) {
+    return "Parece que você está sobrecarregado. Esse cansaço é mais físico, mental ou os dois?";
+  }
+
+  if (text.includes("trabalho")) {
+    return "Seu trabalho parece estar pesando bastante. O que nele mais tem te afetado?";
+  }
 
   const responses = [
     "Entendo. Pode me contar um pouco mais sobre isso?",
@@ -30,63 +43,102 @@ function fakeTherapyResponse(message) {
     "Vamos respirar um pouco e refletir sobre isso.",
     "Você já passou por algo parecido antes?",
     "O que você gostaria que fosse diferente nessa situação?"
-  ]
+  ];
 
-  const random = Math.floor(Math.random() * responses.length)
-
-  return responses[random]
+  const randomIndex = Math.floor(Math.random() * responses.length);
+  return responses[randomIndex];
 }
 
-app.post("/chat", async (req, res) => {
-
+app.post("/chat", (req, res) => {
   try {
+    const userMessage = req.body?.message;
 
-    const userMessage = req.body.message
-
-    if (!userMessage) {
+    if (!userMessage || !userMessage.trim()) {
       return res.status(400).json({
-        error: "Mensagem vazia"
-      })
+        reply: "Mensagem vazia."
+      });
     }
 
-    /*
-    salva mensagem do usuário
-    */
-    conversationHistory.push({
-      role: "user",
-      content: userMessage
-    })
+    db.run(
+      "INSERT INTO messages (user_id, role, content) VALUES (?, ?, ?)",
+      [1, "user", userMessage],
+      (insertUserError) => {
+        if (insertUserError) {
+          console.error("Erro ao salvar mensagem do usuário:", insertUserError);
+          return res.status(500).json({
+            reply: "Erro ao salvar mensagem."
+          });
+        }
 
-    /*
-    resposta da IA fake
-    */
-    const aiMessage = fakeTherapyResponse(userMessage)
+        db.all(
+          "SELECT role, content FROM messages WHERE user_id = ? ORDER BY id ASC LIMIT 10",
+          [1],
+          (historyError, rows) => {
+            if (historyError) {
+              console.error("Erro ao buscar histórico:", historyError);
+              return res.status(500).json({
+                reply: "Erro ao buscar histórico."
+              });
+            }
 
-    /*
-    salva resposta da IA
-    */
-    conversationHistory.push({
-      role: "assistant",
-      content: aiMessage
-    })
+            console.log("Histórico recente:", rows);
 
-    res.json({
-      reply: aiMessage,
-      history: conversationHistory
-    })
+            const history = rows
+              .map((m) => `${m.role}: ${m.content}`)
+              .join("\n");
 
+            const contextPrompt = `
+Histórico da conversa:
+${history}
+
+Usuário acabou de dizer:
+${userMessage}
+
+Responda como uma terapeuta empática.
+`;
+
+            const aiMessage = fakeTherapyResponse(contextPrompt);
+
+            
+              db.run(
+  "INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)",
+  [currentSessionId, "assistant", aiMessage],
+  (insertAiError) => {
+                if (insertAiError) {
+                  console.error("Erro ao salvar resposta da IA:", insertAiError);
+                  return res.status(500).json({
+                    reply: "Erro ao salvar resposta."
+                  });
+                }
+
+                return res.json({
+                  reply: aiMessage
+                });
+              }
+            );
+          }
+        );
+      }
+    );
   } catch (error) {
+    console.error("ERRO NO /chat:", error);
 
-    console.error(error)
-
-    res.status(500).json({
-      error: "Erro no servidor"
-    })
+    return res.status(500).json({
+      reply: "Erro interno do servidor."
+    });
   }
-})
-
+});
+db.run(
+  "INSERT INTO sessions DEFAULT VALUES",
+  function (err) {
+    if (err) {
+      console.error("Erro ao criar sessão:", err);
+    } else {
+      currentSessionId = this.lastID;
+      console.log("Sessão criada:", currentSessionId);
+    }
+  }
+);
 app.listen(PORT, () => {
-
-  console.log("Servidor Echomind rodando na porta 3000")
-
-})
+  console.log(`Servidor Echomind rodando na porta ${PORT}`);
+});
