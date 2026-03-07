@@ -9,7 +9,7 @@ export default function Register() {
   const [name, setName] = useState("");
 
   async function handleRegister() {
-    const res = await fetch("http://192.168.1.6:3001/auth/register", {
+    const res = await fetch("http://192.168.1.8:3000/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, name }),
@@ -31,7 +31,7 @@ export default function Register() {
       flex: 1,
       justifyContent: "center",
       padding: 20,
-     backgroundColor: "#0f172a"
+     backgroundColor: "#b2b2b3"
     }}>
 
       <TextInput
@@ -52,7 +52,7 @@ export default function Register() {
         placeholderTextColor="#94a3b8"
         onChangeText={setEmail}
         style={{
-          backgroundColor: "#1e293b",
+          backgroundColor: "#edeff1",
           color: "#fff",
           borderRadius: 8,
           padding: 12,
@@ -66,7 +66,7 @@ export default function Register() {
         secureTextEntry
         onChangeText={setPassword}
         style={{
-          backgroundColor: "#1e293b",
+          backgroundColor: "#d9dce0",
           color: "#fff",
           borderRadius: 8,
           padding: 12,
