@@ -19,7 +19,9 @@ type ChatMessage = {
 export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [message, setMessage] = useState("");
-  const scrollRef = useRef<ScrollView | null>(null);
+  const [sessionId, setSessionId] = useState<number | null>(null);
+
+  const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     setMessages([
@@ -34,7 +36,7 @@ export default function Chat() {
   async function sendMessage() {
     if (!message.trim()) return;
 
-    const currentMessage = message;
+    const currentMessage = message.trim();
 
     const userMsg: ChatMessage = {
       role: "user",
@@ -45,24 +47,32 @@ export default function Chat() {
     setMessages((prev) => [...prev, userMsg]);
     setMessage("");
 
-    try {
-      const res = await fetch("http://127.0.0.1:3000/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: currentMessage,
-        }),
-      });
+  try {
+  const response = await fetch("http://localhost:3000/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message: currentMessage,
+      sessionId,
+    }),
+  });
 
-      const data = await res.json();
+  const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error("Erro ao buscar resposta");
+      }
+
+      if (data.sessionId && sessionId === null) {
+        setSessionId(data.sessionId);
+      }
 
       const botMsg: ChatMessage = {
         role: "bot",
         type: "text",
-        text: data.reply,
-  
+        text: data.reply ?? "Sem resposta do servidor.",
       };
 
       setMessages((prev) => [...prev, botMsg]);
@@ -74,6 +84,8 @@ export default function Chat() {
       };
 
       setMessages((prev) => [...prev, errorMsg]);
+
+      console.log("Erro:", error);
     }
   }
 
@@ -105,7 +117,9 @@ export default function Chat() {
           return (
             <View
               key={index}
-              style={msg.role === "user" ? styles.userBubble : styles.botBubble}
+              style={
+                msg.role === "user" ? styles.userBubble : styles.botBubble
+              }
             >
               <Text style={styles.messageText}>{msg.text}</Text>
             </View>
@@ -114,15 +128,16 @@ export default function Chat() {
       </ScrollView>
 
       <View style={styles.inputArea}>
-<TextInput
-  style={styles.input}
-  value={message}
-  onChangeText={setMessage}
-  placeholder="Digite sua mensagem..."
-  placeholderTextColor="#777"
-  onSubmitEditing={sendMessage}
-  returnKeyType="send"
-/>
+        <TextInput
+          style={styles.input}
+          value={message}
+          onChangeText={setMessage}
+          placeholder="Digite sua mensagem..."
+          placeholderTextColor="#777"
+          returnKeyType="send"
+          onSubmitEditing={sendMessage}
+        />
+
         <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
           <Text style={styles.sendButtonText}>Enviar</Text>
         </TouchableOpacity>
