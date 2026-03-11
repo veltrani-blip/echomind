@@ -1,226 +1,179 @@
-import { ResizeMode, Video } from "expo-av";
-import React, { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
-type ChatMessage = {
-  role: "user" | "bot";
-  type: "text" | "video";
-  text?: string;
-  url?: string;
-};
+import { useRouter } from "expo-router";
 
 export default function Chat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [message, setMessage] = useState("");
-  const [sessionId, setSessionId] = useState<number | null>(null);
 
-  const scrollRef = useRef<ScrollView>(null);
+  const router = useRouter();
 
-  useEffect(() => {
-    setMessages([
-      {
-        role: "bot",
-        type: "text",
-        text: "Olá, eu sou o Echomind. Como posso te ajudar hoje?",
-      },
-    ]);
-  }, []);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [input, setInput] = useState("");
 
   async function sendMessage() {
-    if (!message.trim()) return;
 
-    const currentMessage = message.trim();
+    if (!input.trim()) return;
 
-    const userMsg: ChatMessage = {
+    const userMessage = {
       role: "user",
-      type: "text",
-      text: currentMessage,
+      text: input
     };
 
-    setMessages((prev) => [...prev, userMsg]);
-    setMessage("");
+    setMessages(prev => [...prev, userMessage]);
 
-  try {
-  const response = await fetch("http://localhost:3000/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      message: currentMessage,
-      sessionId,
-    }),
-  });
+    try {
 
-  const data = await response.json();
+      const response = await fetch("http://localhost:3000/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message: input,
+          sessionId: "demo-session"
+        })
+      });
 
-      if (!response.ok || !data.ok) {
-        throw new Error("Erro ao buscar resposta");
-      }
+      const data = await response.json();
 
-      if (data.sessionId && sessionId === null) {
-        setSessionId(data.sessionId);
-      }
-
-      const botMsg: ChatMessage = {
-        role: "bot",
-        type: "text",
-        text: data.reply ?? "Sem resposta do servidor.",
+      const botMessage = {
+        role: "assistant",
+        text: data.reply
       };
 
-      setMessages((prev) => [...prev, botMsg]);
+      setMessages(prev => [...prev, botMessage]);
+
     } catch (error) {
-      const errorMsg: ChatMessage = {
-        role: "bot",
-        type: "text",
-        text: "Erro ao conectar com o servidor.",
+
+      const errorMessage = {
+        role: "assistant",
+        text: "Erro ao conectar com o servidor."
       };
 
-      setMessages((prev) => [...prev, errorMsg]);
+      setMessages(prev => [...prev, errorMessage]);
 
-      console.log("Erro:", error);
     }
+
+    setInput("");
+  }
+
+  function leaveSession() {
+    router.push("/home");
+  }
+
+  function endSession() {
+    router.push("/feedback");
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView
-        ref={scrollRef}
-        style={styles.chatArea}
-        contentContainerStyle={styles.chatContent}
-        onContentSizeChange={() =>
-          scrollRef.current?.scrollToEnd({ animated: true })
-        }
-      >
-        {messages.map((msg, index) => {
-          if (msg.type === "video" && msg.url) {
-            return (
-              <View key={index} style={styles.botBubble}>
-                <Video
-                  source={{ uri: msg.url }}
-                  style={styles.video}
-                  useNativeControls
-                  resizeMode={ResizeMode.CONTAIN}
-                  shouldPlay={false}
-                />
-              </View>
-            );
-          }
 
-          return (
-            <View
-              key={index}
-              style={
-                msg.role === "user" ? styles.userBubble : styles.botBubble
-              }
-            >
-              <Text style={styles.messageText}>{msg.text}</Text>
-            </View>
-          );
-        })}
+    <View style={styles.container}>
+
+      <View style={styles.sessionBar}>
+
+        <TouchableOpacity
+          style={styles.smallButton}
+          onPress={leaveSession}
+        >
+          <Text style={styles.smallText}>Sair</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.smallButton}
+          onPress={endSession}
+        >
+          <Text style={styles.smallText}>Encerrar</Text>
+        </TouchableOpacity>
+
+      </View>
+
+      <ScrollView style={styles.chatArea}>
+
+        {messages.map((msg, i) => (
+          <Text key={i} style={styles.message}>
+            {msg.role === "user" ? "Você: " : "Echomind: "}
+            {msg.text}
+          </Text>
+        ))}
+
       </ScrollView>
 
-      <View style={styles.inputArea}>
-        <TextInput
-          style={styles.input}
-          value={message}
-          onChangeText={setMessage}
-          placeholder="Digite sua mensagem..."
-          placeholderTextColor="#777"
-          returnKeyType="send"
-          onSubmitEditing={sendMessage}
-        />
+      <TextInput
+        style={styles.input}
+        value={input}
+        onChangeText={setInput}
+        placeholder="Digite sua mensagem..."
+        onSubmitEditing={sendMessage}
+      />
 
-        <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-          <Text style={styles.sendButtonText}>Enviar</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={sendMessage}
+      >
+        <Text style={styles.buttonText}>Enviar</Text>
+      </TouchableOpacity>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-    paddingTop: 50,
+
+  container:{
+    flex:1,
+    backgroundColor:"#0f172a",
+    padding:20
   },
 
-  chatArea: {
-    flex: 1,
+  sessionBar:{
+    flexDirection:"row",
+    justifyContent:"space-between",
+    marginBottom:10
   },
 
-  chatContent: {
-    padding: 20,
+  smallButton:{
+    backgroundColor:"#1e293b",
+    padding:10,
+    borderRadius:8
   },
 
-  userBubble: {
-    alignSelf: "flex-end",
-    backgroundColor: "#1DBF73",
-    padding: 12,
-    borderRadius: 16,
-    marginBottom: 10,
-    maxWidth: "80%",
+  smallText:{
+    color:"white"
   },
 
-  botBubble: {
-    alignSelf: "flex-start",
-    backgroundColor: "#e4e4e4",
-    padding: 12,
-    borderRadius: 16,
-    marginBottom: 10,
-    maxWidth: "80%",
+  chatArea:{
+    flex:1,
+    marginBottom:10
   },
 
-  messageText: {
-    fontSize: 16,
-    color: "#111",
+  message:{
+    color:"white",
+    marginBottom:10
   },
 
-  video: {
-    width: 250,
-    height: 200,
-    borderRadius: 12,
-    backgroundColor: "#000",
+  input:{
+    backgroundColor:"white",
+    padding:12,
+    borderRadius:8,
+    marginBottom:10
   },
 
-  inputArea: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 10,
-    backgroundColor: "#ffffff",
-    borderTopWidth: 1,
-    borderTopColor: "#dddddd",
+  button:{
+    backgroundColor:"#ff4d6d",
+    padding:16,
+    borderRadius:8
   },
 
-  input: {
-    flex: 1,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    color: "#111",
-  },
+  buttonText:{
+    color:"white",
+    textAlign:"center"
+  }
 
-  sendButton: {
-    marginLeft: 10,
-    backgroundColor: "#1DBF73",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  sendButtonText: {
-    color: "#ffffff",
-    fontWeight: "bold",
-  },
 });

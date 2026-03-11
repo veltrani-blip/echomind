@@ -1,18 +1,20 @@
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-export default function Index() {
+export default function Onboarding() {
   const router = useRouter();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>ECHOMIND</Text>
+      <Text style={styles.text}>
+        Echomind é um espaço seguro para conversar sobre como você está se sentindo.
+      </Text>
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => router.push("/onboarding")}
+        onPress={() => router.push("/moodCheck")}
       >
-        <Text style={styles.buttonText}>Começar</Text>
+        <Text style={styles.buttonText}>Continuar</Text>
       </TouchableOpacity>
     </View>
   );
@@ -22,14 +24,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#0f172a",
-    alignItems: "center",
     justifyContent: "center",
+    padding: 30,
   },
 
-  title: {
-    fontSize: 36,
+  text: {
     color: "white",
-    fontWeight: "bold",
+    fontSize: 20,
     marginBottom: 40,
   },
 
@@ -41,6 +42,7 @@ const styles = StyleSheet.create({
 
   buttonText: {
     color: "white",
+    textAlign: "center",
     fontSize: 18,
   },
 });
