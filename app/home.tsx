@@ -6,20 +6,21 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bem-vindo ao Echomind</Text>
+      <Text style={styles.title}>Echomind</Text>
+      <Text style={styles.subtitle}>Listen to your mind</Text>
 
       <TouchableOpacity
-        style={styles.button}
-        onPress={() => router.push("/session")}
+        style={styles.primary}
+        onPress={() => router.push("/voiceSession")}
       >
-        <Text style={styles.text}>Iniciar Sessão</Text>
+        <Text style={styles.text}>🎤 Voz</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={styles.button}
+        style={styles.secondary}
         onPress={() => router.push("/chat")}
       >
-        <Text style={styles.text}>Abrir Chat</Text>
+        <Text style={styles.text}>💬 Chat</Text>
       </TouchableOpacity>
     </View>
   );
@@ -28,28 +29,37 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f172a",
-    alignItems: "center",
+    backgroundColor: "#0B0C10",
     justifyContent: "center",
+    alignItems: "center",
   },
 
   title: {
-    color: "white",
-    fontSize: 26,
+    fontSize: 28,
+    color: "#fff",
+    marginBottom: 8,
+  },
+
+  subtitle: {
+    color: "#888",
     marginBottom: 40,
   },
 
-  button: {
-    backgroundColor: "#ff4d6d",
-    padding: 16,
-    borderRadius: 10,
+  primary: {
+    backgroundColor: "#6C63FF",
+    padding: 20,
+    borderRadius: 20,
     marginBottom: 16,
-    width: 200,
-    alignItems: "center",
+  },
+
+  secondary: {
+    backgroundColor: "#1F2430",
+    padding: 20,
+    borderRadius: 20,
   },
 
   text: {
-    color: "white",
-    fontSize: 18,
+    color: "#fff",
+    fontSize: 16,
   },
 });

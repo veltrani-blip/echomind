@@ -1,46 +1,5 @@
-import { useRouter } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Redirect } from "expo-router";
 
 export default function Index() {
-  const router = useRouter();
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>ECHOMIND</Text>
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => router.push("/onboarding")}
-      >
-        <Text style={styles.buttonText}>Começar</Text>
-      </TouchableOpacity>
-    </View>
-  );
+  return <Redirect href="/home" />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0f172a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  title: {
-    fontSize: 36,
-    color: "white",
-    fontWeight: "bold",
-    marginBottom: 40,
-  },
-
-  button: {
-    backgroundColor: "#ff4d6d",
-    padding: 16,
-    borderRadius: 10,
-  },
-
-  buttonText: {
-    color: "white",
-    fontSize: 18,
-  },
-});

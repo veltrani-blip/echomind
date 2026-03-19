@@ -1,71 +1,78 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 import { useRouter } from "expo-router";
 
+type Message = {
+  role: "user" | "assistant";
+  text: string;
+};
+
 export default function Chat() {
-
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
 
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
 
   async function sendMessage() {
-
     if (!input.trim()) return;
 
-    const userMessage = {
+    const userMessage: Message = {
       role: "user",
-      text: input
+      text: input,
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
+
+    setInput("");
 
     try {
-
-      const response = await fetch("http://localhost:3000/chat", {
+      const response = await fetch("http://192.168.1.9:3000/chat", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: input,
-          sessionId: "demo-session"
-        })
+          message: userMessage.text,
+          sessionId: "user-session-1",
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error("Erro HTTP");
+      }
 
       const data = await response.json();
 
-      const botMessage = {
+      const botMessage: Message = {
         role: "assistant",
-        text: data.reply
+        text: data.reply,
       };
 
-      setMessages(prev => [...prev, botMessage]);
-
+      setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-
-      const errorMessage = {
-        role: "assistant",
-        text: "Erro ao conectar com o servidor."
-      };
-
-      setMessages(prev => [...prev, errorMessage]);
-
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text: "Erro ao conectar com o servidor.",
+        },
+      ]);
     }
-
-    setInput("");
   }
 
   function leaveSession() {
-    router.push("/home");
+    router.replace("/home");
   }
 
   function endSession() {
@@ -73,107 +80,144 @@ export default function Chat() {
   }
 
   return (
-
-    <View style={styles.container}>
-
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      {/* HEADER */}
       <View style={styles.sessionBar}>
-
-        <TouchableOpacity
-          style={styles.smallButton}
-          onPress={leaveSession}
-        >
+        <TouchableOpacity style={styles.smallButton} onPress={leaveSession}>
           <Text style={styles.smallText}>Sair</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.smallButton}
-          onPress={endSession}
-        >
+        <Text style={styles.headerTitle}>Echomind</Text>
+
+        <TouchableOpacity style={styles.smallButton} onPress={endSession}>
           <Text style={styles.smallText}>Encerrar</Text>
         </TouchableOpacity>
-
       </View>
 
-      <ScrollView style={styles.chatArea}>
-
+      {/* CHAT */}
+      <ScrollView
+        ref={scrollRef}
+        style={styles.chatArea}
+        contentContainerStyle={{ paddingBottom: 20 }}
+        onContentSizeChange={() =>
+          scrollRef.current?.scrollToEnd({ animated: true })
+        }
+      >
         {messages.map((msg, i) => (
-          <Text key={i} style={styles.message}>
-            {msg.role === "user" ? "Você: " : "Echomind: "}
-            {msg.text}
-          </Text>
+          <View
+            key={i}
+            style={[
+              styles.messageBubble,
+              msg.role === "user"
+                ? styles.userBubble
+                : styles.botBubble,
+            ]}
+          >
+            <Text style={styles.messageText}>{msg.text}</Text>
+          </View>
         ))}
-
       </ScrollView>
 
-      <TextInput
-        style={styles.input}
-        value={input}
-        onChangeText={setInput}
-        placeholder="Digite sua mensagem..."
-        onSubmitEditing={sendMessage}
-      />
+      {/* INPUT */}
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          value={input}
+          onChangeText={setInput}
+          placeholder="Digite sua mensagem..."
+          placeholderTextColor="#6B7280"
+          onSubmitEditing={sendMessage}
+        />
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={sendMessage}
-      >
-        <Text style={styles.buttonText}>Enviar</Text>
-      </TouchableOpacity>
-
-    </View>
+        <TouchableOpacity style={styles.button} onPress={sendMessage}>
+          <Text style={styles.buttonText}>Enviar</Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-
-  container:{
-    flex:1,
-    backgroundColor:"#0f172a",
-    padding:20
+  container: {
+    flex: 1,
+    backgroundColor: "#0D0F14",
+    padding: 16,
   },
 
-  sessionBar:{
-    flexDirection:"row",
-    justifyContent:"space-between",
-    marginBottom:10
+  sessionBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
   },
 
-  smallButton:{
-    backgroundColor:"#1e293b",
-    padding:10,
-    borderRadius:8
+  headerTitle: {
+    color: "#E6E8EE",
+    fontSize: 16,
+    fontWeight: "500",
   },
 
-  smallText:{
-    color:"white"
+  smallButton: {
+    backgroundColor: "#1F2430",
+    padding: 10,
+    borderRadius: 8,
   },
 
-  chatArea:{
-    flex:1,
-    marginBottom:10
+  smallText: {
+    color: "#E6E8EE",
   },
 
-  message:{
-    color:"white",
-    marginBottom:10
+  chatArea: {
+    flex: 1,
   },
 
-  input:{
-    backgroundColor:"white",
-    padding:12,
-    borderRadius:8,
-    marginBottom:10
+  messageBubble: {
+    maxWidth: "80%",
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 10,
   },
 
-  button:{
-    backgroundColor:"#ff4d6d",
-    padding:16,
-    borderRadius:8
+  userBubble: {
+    alignSelf: "flex-end",
+    backgroundColor: "#6C63FF",
   },
 
-  buttonText:{
-    color:"white",
-    textAlign:"center"
-  }
+  botBubble: {
+    alignSelf: "flex-start",
+    backgroundColor: "#1F2430",
+  },
 
+  messageText: {
+    color: "#fff",
+  },
+
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+  },
+
+  input: {
+    flex: 1,
+    backgroundColor: "#1F2430",
+    padding: 14,
+    borderRadius: 12,
+    color: "#fff",
+  },
+
+  button: {
+    backgroundColor: "#6C63FF",
+    padding: 14,
+    borderRadius: 12,
+    marginLeft: 10,
+  },
+
+  buttonText: {
+    color: "#fff",
+    fontWeight: "500",
+  },
 });
