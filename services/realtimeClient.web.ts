@@ -2,7 +2,7 @@ import type { IntakeData } from "@/types/user";
 
 type SetRemoteStream = (stream: MediaStream | null) => void;
 
-const REALTIME_MODEL = "gpt-4o-realtime-preview-2024-12-17";
+const REALTIME_MODEL = "gpt-4o-realtime-preview";
 // Em produção (Vercel) usa /api/session no mesmo domínio.
 // Em dev local aponta para o echomind-server local via EXPO_PUBLIC_SESSION_URL.
 const SESSION_URL =
