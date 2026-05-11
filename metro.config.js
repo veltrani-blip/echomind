@@ -7,11 +7,16 @@ const config = getDefaultConfig(__dirname);
 // O Expo Router importa todos os arquivos de rota para montar o mapa de navegação,
 // incluindo voiceSession.tsx que tem import nativo — sem esse resolver o Metro
 // tentaria carregar requireNativeComponent no browser e quebraria.
+const WEB_STUBS = {
+  "react-native-webrtc": "stubs/react-native-webrtc.web.js",
+  "react-native-incall-manager": "stubs/react-native-incall-manager.web.js",
+};
+
 const originalResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (platform === "web" && moduleName === "react-native-webrtc") {
+  if (platform === "web" && WEB_STUBS[moduleName]) {
     return {
-      filePath: path.resolve(__dirname, "stubs/react-native-webrtc.web.js"),
+      filePath: path.resolve(__dirname, WEB_STUBS[moduleName]),
       type: "sourceFile",
     };
   }
