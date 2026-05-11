@@ -1,7 +1,6 @@
 export default function middleware(request) {
   const { pathname } = new URL(request.url);
 
-  // Libera rotas de API e assets estáticos
   if (
     pathname.startsWith("/api/") ||
     pathname.startsWith("/_expo/") ||
@@ -11,10 +10,18 @@ export default function middleware(request) {
     return;
   }
 
-  const token = request.cookies.get("echomind_token")?.value;
+  const cookieHeader = request.headers.get("cookie") || "";
+  const cookies = Object.fromEntries(
+    cookieHeader.split(";").map((c) => {
+      const [k, ...v] = c.trim().split("=");
+      return [k.trim(), v.join("=")];
+    })
+  );
+
+  const token = cookies["echomind_token"];
 
   if (token && token === process.env.ADMIN_TOKEN) {
-    return; // autenticado
+    return;
   }
 
   const loginUrl = new URL("/api/login", request.url);
